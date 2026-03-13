@@ -36,6 +36,25 @@ class Level:
 
     def __hash__(self):
         return hash(self.name)
+    
+    async def set_block(self, x: int, y: int, z: int, block: str):
+        """
+        在指定坐标放置方块block 
+        例如: "minecraft:stone"
+        """
+        resp = await self._client.request("set_block",{"level": self.name,"x": x,"y": y,"z": z,"block": block})
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
+        
+    async def get_block(self, x: int, y: int, z: int) -> str:
+        """
+        搜索指定位置方块类型
+        """
+        resp = await self._client.request("get_block",{"level": self.name,"x": x,"y": y,"z": z})
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
+        block = resp["data"]["block"]
+        return block
 
 
 # ----- 测试与示例代码 -----
