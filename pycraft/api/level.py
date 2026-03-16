@@ -56,6 +56,26 @@ class Level:
         block = resp["data"]["block"]
         return block
 
+    async def get_players(self):
+        """
+        获取该维度中的所有玩家
+        """
+        resp = await self._client.request("get_players",{"level": self.name})
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
+        from pycraft import Entity
+        players = []
+        for p in resp["data"]["players"]:
+            players.append(Entity(self._client,self,p["id"],p["name"]))
+        return players
+    
+    async def set_blocks(self, x1, y1, z1, x2, y2, z2, block):
+        """
+        填充一个区域的方块
+        """
+        resp = await self._client.request("set_blocks",{"level": self.name, "x1": x1,"y1": y1,"z1": z1,"x2": x2,"y2": y2,"z2": z2,"block": block})
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
 
 # ----- 测试与示例代码 -----
 async def main():
