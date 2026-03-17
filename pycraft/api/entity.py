@@ -74,3 +74,17 @@ class Entity:
         )
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
+    
+    async def set_camera(self, target_entity_id: int):
+        """
+        切换摄像机到指定实体
+        """
+        resp = await self._client.request("set_camera", {"player_id": self.entity_id,"target_entity_id": target_entity_id})
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
+
+    async def reset_camera(self):
+        """
+        恢复第一人称
+        """
+        await self.set_camera(self.entity_id)
