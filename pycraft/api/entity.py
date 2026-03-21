@@ -1,6 +1,7 @@
 # pycraft/api/entity.py
 
 from pycraft.api.level import Level
+import asyncio
 
 
 class Entity:
@@ -58,7 +59,7 @@ class Entity:
             raise Exception(resp.get("error_message"))
 
 
-    async def move_to(self, x, y, z, speed=0.2):
+    async def move_to(self, x, y, z, speed=0.2): # move_to函数有问题
         """
         让实体以一定速度移动到目标位置
         """
@@ -74,17 +75,44 @@ class Entity:
         )
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
+        
+    async def move_smooth(entity, target, speed=0.2):
+        while True:
+            x, y, z = await entity.get_pos()
+
+            dx = target[0] - x
+            dy = target[1] - y
+            dz = target[2] - z
+
+            if dx*dx + dy*dy + dz*dz < 0.01:
+                break
+
+            await entity.move_to(*target, speed=speed)
+            await asyncio.sleep(0.05)
     
-    async def set_camera(self, target_entity_id: int):
+    async def set_perspective(self, mode: int = 0) -> bool:
         """
-        切换摄像机到指定实体
+        切换玩家视角
+        param mode: 0 - 第一人称, 1 - 第三人称背面, 2 - 第三人称正面
+        return: 是否设置成功
         """
-        resp = await self._client.request("set_camera", {"player_id": self.entity_id,"target_entity_id": target_entity_id})
+        if mode not in (0, 1, 2):
+            raise ValueError(f"Invalid perspective mode: {mode}")
+        # 发送请求到 Java 端
+        resp = await self._client.request("set_perspective", {"mode": mode})
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
+        return True
 
-    async def reset_camera(self):
-        """
-        恢复第一人称
-        """
-        await self.set_camera(self.entity_id)
+    async def set_rotation(self, yaw: float, pitch: float = 90.0):
+        resp = await self._client.request("set_rotation", {"yaw": yaw, "pitch": pitch})
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
+        return True
+    
+    async def get_rotation(self) -> tuple[float, float]:
+        resp = await self._client.request("get_rotation", {})
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
+        data = resp.get("data", {})
+        return data["yaw"], data["pitch"]

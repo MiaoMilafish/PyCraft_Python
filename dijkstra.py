@@ -1,6 +1,6 @@
 import asyncio
 import heapq
-import time
+import math
 from pycraft import PyModClient
 
 def create_maze():
@@ -67,12 +67,29 @@ def dijkstra(maze, start, end):
                     heapq.heappush(pq, (new_cost, (nr,nc)))
     return []
 
+def direction_to_yaw(dx, dz):
+    """
+    计算前进方向
+    """
+    return math.degrees(math.atan2(-dx, dz))
+
 async def show_path(level, player, path, block_id, base_x, base_y, base_z):
-    for r, c in path:
-        x = base_x + r
-        z = base_z + c
+    """
+    一边走一边自动转向
+    """
+    for i in range(1, len(path)):
+        x0, z0 = path[i-1]
+        x1, z1 = path[i]
+        dx = x1 - x0
+        dz = z1 - z0
+        yaw = direction_to_yaw(dx, dz)
+        # 先转向
+        await player.set_rotation(yaw)
+        # 再移动
+        x = base_x + x1
+        z = base_z + z1
         await level.set_block(x, base_y-1, z, block_id)
-        await player.teleport(x, base_y + 1, z)
+        await player.teleport(x, base_y, z)
         await asyncio.sleep(0.3)
 
 async def main():
@@ -92,6 +109,7 @@ async def main():
         end = (9, 9)
         path = dijkstra(maze, start, end)
         gold = "minecraft:gold_block"
+        await player.set_perspective(1)
         await show_path(level, player, path, gold, base_x, base_y, base_z)
     finally:
         await mc.close()
