@@ -76,6 +76,34 @@ class Level:
         resp = await self._client.request("set_blocks",{"level": self.name, "x1": x1,"y1": y1,"z1": z1,"x2": x2,"y2": y2,"z2": z2,"block": block})
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
+        
+    async def spawn_entity(self, entity_type, x, y, z):
+        resp = await self._client.request(
+            "spawn_entity",
+            {
+                "entity_type": entity_type,
+                "x": x,
+                "y": y,
+                "z": z
+            }
+        )
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
+        return resp["data"]["entity_id"]
+    
+    async def spawn_particle(self, x, y, z, particle="flame", count=1):
+        resp = await self._client.request(
+            "spawn_particle",
+            {
+                "particle": particle,
+                "x": x,
+                "y": y,
+                "z": z,
+                "count": count
+            }
+        )
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
 
 # ----- 测试与示例代码 -----
 async def main():

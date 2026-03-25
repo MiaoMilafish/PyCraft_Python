@@ -116,3 +116,4 @@ class Entity:
             raise Exception(resp.get("error_message"))
         data = resp.get("data", {})
         return data["yaw"], data["pitch"]
+    
