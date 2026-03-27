@@ -77,19 +77,29 @@ class Level:
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
         
-    async def spawn_entity(self, entity_type, x, y, z):
-        resp = await self._client.request(
-            "spawn_entity",
-            {
-                "entity_type": entity_type,
-                "x": x,
-                "y": y,
-                "z": z
-            }
-        )
+    async def spawn_entity(self, entity_type: str, x: float, y: float, z: float):
+        """
+        在指定位置生成实体
+        :param entity_type: 实体ID，例如 "minecraft:pig"
+        :param x, y, z: 坐标
+        """
+        # 构造符合 Java ResourceLocation 格式的 ID
+        if ":" not in entity_type:
+            entity_type = f"minecraft:{entity_type}"
+
+        payload = {
+            "level": self.name,  # 这里的 self.name 对应维度 ID，如 "minecraft:overworld"
+            "x": float(x),
+            "y": float(y),
+            "z": float(z),
+            "entity_type": entity_type
+        }
+        resp = await self._client.request("spawn_entity", payload)
         if not resp.get("success"):
-            raise Exception(resp.get("error_message"))
-        return resp["data"]["entity_id"]
+            raise Exception(f"Failed to spawn entity: {resp.get('error_message')}")
+        # 如果在 Java 端在 JsonObject 里放了 entity_id，可以在这里获取
+        # 目前返回的是空 JsonObject，所以直接返回 True
+        return True
     
     async def spawn_particle(self, x, y, z, particle="flame", count=1):
         resp = await self._client.request(
