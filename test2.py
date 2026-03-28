@@ -15,18 +15,26 @@ async def main():
         print(time)
 
         await player.set_perspective(1)
+        pos1 = await player.get_pos()
+        print(pos1)
 
         # 生成小猪
-        pig_id = await overworld.spawn_entity(
+        pig = await overworld.spawn_entity(
             "minecraft:pig",
-            120, 80, 120
+            -103.5, 67, 100.5
         )
-        print("Spawn pig:", pig_id)
+        uuid = pig.uuid
+        id = pig.entity_id
+        print(uuid)
+        print(id)
 
         # 持续追逐
         while True:
             # 获取小猪位置
-            px, py, pz = await pig_id.get_pos(pig_id)
+            px, py, pz = await pig.get_pos()
+            print(px)
+            print(py)
+            print(pz)
 
             # 获取玩家位置（可选调试）
             player_pos = await player.get_pos()
@@ -35,7 +43,7 @@ async def main():
             # 玩家移动到小猪
             await player.move_to(px, py, pz, speed=0.25)
 
-            # （可选）画轨迹
+            # 画轨迹
             await overworld.spawn_particle(px, py + 0.5, pz)
 
             await asyncio.sleep(0.05)  # 对齐20TPS

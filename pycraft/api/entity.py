@@ -9,86 +9,72 @@ class Entity:
     实体实例的引用
     """
 
-    def __init__(self, client, level: Level, entity_id: int, name: str):
+    def __init__(self, client, level: Level, uuid: str, name: str):
         self._client = client
         self.level = level
-        self.entity_id = entity_id
+        self.uuid = uuid
         self.name = name
 
     def __repr__(self):
-        return f"<Entity id={self.entity_id} name={self.name}>"
+        return f"<uuid={self.uuid} name={self.name}>"
 
     async def get_pos(self):
-        """
-        获取实体位置
-        """
-        resp = await self._client.request(
+        resp = await self.level._client.request(
             "get_entity_pos",
             {
-                "entity_id": self.entity_id
+                "uuid": self.uuid
             }
         )
-
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
-
-        data = resp["data"]
-
-        return (
-            data["x"],
-            data["y"],
-            data["z"]
-        )
+        data = resp.get("data")
+        if not isinstance(data, dict):
+            raise Exception(f"Invalid response data: {resp}")
+        try:
+            x = data["x"]
+            y = data["y"]
+            z = data["z"]
+        except KeyError:
+            raise Exception(f"Incomplete position data: {data}")
+        result = (x, y, z)
+        print("Debug:", result)
+        return result
 
 
     async def teleport(self, x, y, z):
         """
         瞬移实体
         """
-        resp = await self._client.request(
+        resp = await self.level._client.request(
             "teleport_entity",
             {
-                "entity_id": self.entity_id,
+                "uuid": self.uuid, 
                 "x": x,
                 "y": y,
                 "z": z
             }
         )
-
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
+        return True
 
 
-    async def move_to(self, x, y, z, speed=0.2): # move_to函数有问题
-        """
-        让实体以一定速度移动到目标位置
-        """
-        resp = await self._client.request(
-            "move_entity",
-            {
-                "entity_id": self.entity_id,
+    async def move_to(self, x, y, z, speed=0.2, eps=0.2):
+        while True:
+            px, py, pz = await self.get_pos()
+            dx = x - px
+            dz = z - pz
+            dist = (dx * dx + dz * dz) ** 0.5
+            if dist < eps:
+                break
+            await self.level._client.request("move_entity", {
+                "uuid": self.uuid,
                 "x": x,
                 "y": y,
                 "z": z,
                 "speed": speed
-            }
-        )
-        if not resp.get("success"):
-            raise Exception(resp.get("error_message"))
-        
-    async def move_smooth(entity, target, speed=0.2):
-        while True:
-            x, y, z = await entity.get_pos()
-
-            dx = target[0] - x
-            dy = target[1] - y
-            dz = target[2] - z
-
-            if dx*dx + dy*dy + dz*dz < 0.01:
-                break
-
-            await entity.move_to(*target, speed=speed)
-            await asyncio.sleep(0.05)
+            })
+            await asyncio.sleep(0.05)  # ~1 tick
     
     async def set_perspective(self, mode: int = 0) -> bool:
         """
