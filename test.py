@@ -23,6 +23,9 @@ async def main():
         time = await overworld.get_time()
         print(time)
         await player.set_perspective(1)
+        x,y,z = await player.get_pos() 
+        print(x,y,z)
+        await overworld.spawn_particle(x,y+5,z,count=50)
     finally:
         await mc.close()
 

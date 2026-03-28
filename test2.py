@@ -23,10 +23,8 @@ async def main():
             "minecraft:pig",
             -103.5, 67, 100.5
         )
-        uuid = pig.uuid
-        id = pig.entity_id
-        print(uuid)
-        print(id)
+        pig_id = pig.entity_id
+        print(pig_id)
 
         # 持续追逐
         while True:
@@ -36,7 +34,7 @@ async def main():
             print(py)
             print(pz)
 
-            # 获取玩家位置（可选调试）
+            # 获取玩家位置
             player_pos = await player.get_pos()
             print("Player:", player_pos, "Pig:", (px, py, pz))
 
@@ -46,7 +44,7 @@ async def main():
             # 画轨迹
             await overworld.spawn_particle(px, py + 0.5, pz)
 
-            await asyncio.sleep(0.05)  # 对齐20TPS
+            await asyncio.sleep(0.05) 
 
     finally:
         await mc.close()

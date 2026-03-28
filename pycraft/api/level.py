@@ -79,16 +79,13 @@ class Level:
         
     async def spawn_entity(self, entity_type: str, x: float, y: float, z: float):
         """
-        在指定位置生成实体
-        :param entity_type: 实体ID，例如 "minecraft:pig"
-        :param x, y, z: 坐标
+        生成实体
         """
-        # 构造符合 Java ResourceLocation 格式的 ID
+        from pycraft.api.entity import Entity
         if ":" not in entity_type:
             entity_type = f"minecraft:{entity_type}"
-
         payload = {
-            "level": self.name,  # 这里的 self.name 对应维度 ID，如 "minecraft:overworld"
+            "level": self.name,
             "x": float(x),
             "y": float(y),
             "z": float(z),
@@ -96,10 +93,9 @@ class Level:
         }
         resp = await self._client.request("spawn_entity", payload)
         if not resp.get("success"):
-            raise Exception(f"Failed to spawn entity: {resp.get('error_message')}")
-        # 如果在 Java 端在 JsonObject 里放了 entity_id，可以在这里获取
-        # 目前返回的是空 JsonObject，所以直接返回 True
-        return True
+            raise Exception(resp.get("error_message"))
+        entity_id = resp["data"]["id"]
+        return Entity(self._client, self, entity_id, self.name)
     
     async def spawn_particle(self, x, y, z, particle="flame", count=1):
         resp = await self._client.request(
@@ -112,6 +108,22 @@ class Level:
                 "count": count
             }
         )
+        if not resp.get("success"):
+            raise Exception(resp.get("error_message"))
+        
+    async def draw_path(self, points, color=0xFF0000, duration=200):
+        """
+        可视化路径
+        :param points: [(x,y,z), ...]
+        :param color: 0xRRGGBB
+        :param duration: tick（20tick=1秒）
+        """
+        payload = {
+            "points": [list(map(float, p)) for p in points],
+            "color": int(color),
+            "duration": int(duration)
+        }
+        resp = await self._client.request("draw_path", payload)
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
 

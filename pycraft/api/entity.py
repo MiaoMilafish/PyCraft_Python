@@ -22,44 +22,22 @@ class Entity:
         """
         获取实体位置
         """
-        resp = await self._client.request(
-            "get_entity_pos",
-            {
-                "entity_id": self.entity_id
-            }
-        )
-
+        resp = await self._client.request("get_entity_pos", {"entity_id": self.entity_id})
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
-
         data = resp["data"]
-
-        return (
-            data["x"],
-            data["y"],
-            data["z"]
-        )
-
+        return (data["x"], data["y"], data["z"])
 
     async def teleport(self, x, y, z):
         """
         瞬移实体
         """
-        resp = await self._client.request(
-            "teleport_entity",
-            {
-                "entity_id": self.entity_id,
-                "x": x,
-                "y": y,
-                "z": z
-            }
-        )
-
+        resp = await self._client.request("teleport_entity", {"entity_id": self.entity_id, "x": x, "y": y, "z": z})
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
 
 
-    async def move_to(self, x, y, z, speed=0.2): # move_to函数有问题
+    async def move_to(self, x, y, z, speed=0.2):
         """
         让实体以一定速度移动到目标位置
         """
@@ -76,17 +54,14 @@ class Entity:
         if not resp.get("success"):
             raise Exception(resp.get("error_message"))
         
-    async def move_smooth(entity, target, speed=0.2):
+    async def move_smooth(entity, target, speed=0.2): # 这个函数也有点问题
         while True:
             x, y, z = await entity.get_pos()
-
             dx = target[0] - x
             dy = target[1] - y
             dz = target[2] - z
-
             if dx*dx + dy*dy + dz*dz < 0.01:
                 break
-
             await entity.move_to(*target, speed=speed)
             await asyncio.sleep(0.05)
     
