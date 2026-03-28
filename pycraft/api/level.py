@@ -1,34 +1,6 @@
 # pycraft/api/level.py
 import asyncio
 
-class EntityHandle:
-    def __init__(self, level, uuid: str, entity_id: int = None):
-        self.level = level
-        self.uuid = uuid
-        self.entity_id = entity_id
-
-    def __repr__(self):
-        return f"<Entity uuid={self.uuid} id={self.entity_id}>"
-
-    async def get_pos(self):
-        return await self.level._client.request("get_entity_pos", {
-            "uuid": self.uuid
-        })
-
-    async def move_to(self, x, y, z, speed=1.0):
-        return await self.level._client.request("move_entity", {
-            "uuid": self.uuid,
-            "x": x,
-            "y": y,
-            "z": z,
-            "speed": speed
-        })
-
-    async def kill(self):
-        return await self.level._client.request("kill_entity", {
-            "uuid": self.uuid
-        })
-
 class Level:
     """
     维度类，保存对维度的引用
@@ -94,7 +66,7 @@ class Level:
         from pycraft import Entity
         players = []
         for p in resp["data"]["players"]:
-            players.append(Entity(self._client,self,p["uuid"],p["name"]))
+            players.append(Entity(self._client,self,p["id"],p["name"]))
         return players
     
     async def set_blocks(self, x1, y1, z1, x2, y2, z2, block):
@@ -108,11 +80,15 @@ class Level:
     async def spawn_entity(self, entity_type: str, x: float, y: float, z: float):
         """
         在指定位置生成实体
+        :param entity_type: 实体ID，例如 "minecraft:pig"
+        :param x, y, z: 坐标
         """
+        # 构造符合 Java ResourceLocation 格式的 ID
         if ":" not in entity_type:
             entity_type = f"minecraft:{entity_type}"
+
         payload = {
-            "level": self.name,
+            "level": self.name,  # 这里的 self.name 对应维度 ID，如 "minecraft:overworld"
             "x": float(x),
             "y": float(y),
             "z": float(z),
@@ -120,13 +96,10 @@ class Level:
         }
         resp = await self._client.request("spawn_entity", payload)
         if not resp.get("success"):
-            raise Exception(resp.get("error_message"))
-        data = resp.get("data", {})
-        entity_uuid = data.get("entity_uuid")
-        entity_id = data.get("entity_id")
-        if entity_uuid is None:
-            raise Exception(f"Invalid response: {resp}")
-        return EntityHandle(self, entity_uuid, entity_id)
+            raise Exception(f"Failed to spawn entity: {resp.get('error_message')}")
+        # 如果在 Java 端在 JsonObject 里放了 entity_id，可以在这里获取
+        # 目前返回的是空 JsonObject，所以直接返回 True
+        return True
     
     async def spawn_particle(self, x, y, z, particle="flame", count=1):
         resp = await self._client.request(
